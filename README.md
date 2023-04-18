@@ -1,13 +1,13 @@
 # React Authentication Example
 
-This is a web application with authentication using React and react-router on the frontend and node.js, express, mongodb, and mongoose on the backend.
+This is a web application with authentication using React and react-router on the frontend and node.js, express, mongodb, and mongoose on the backend. (inspired by https://github.com/faizanv/react-auth-example)
 \
 App is specially done with vulnerabilities that are described in `report.pdf` and their fixes are in `fixes` folder
 
 
 To run the application first clone the repository
 ```
-git clone https://github.com/faizanv/react-auth-example.git
+git clone git@github.com:Maruf-co/hack-auth-app.git
 ```
 
 Install the dependencies
