@@ -32,25 +32,14 @@ app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/api/home', function(req, res) {
-  // assigning mocks since middleware here would be problematic on showing prev vulnerabilities
-  const isAdmin = false
-  const email = 'user@mail.com'
+app.get('/api/home', withAuth, function(req, res) {
+  const userStatus = req.isAdmin ? 'admininistrator' : 'user'
 
-  const userStatus = isAdmin ? 'admininistrator' : 'user'
-  const body = `
-    <p>Welcome, dear ${userStatus} </p>
-    <p>With email <b>${email}</b> </p>
-  `
-
-  console.log("body", body)
-  res.send({ body });
+  res.send({ status: userStatus, email: req.email });
 });
 
 app.get('/api/secret', withAuth, function(req, res) {
-  const adminKey = req.email.split('_')[0]
-
-  if(adminKey === adminSecretKey) {
+  if(req.isAdmin) {
     res.send("Welcome, dear administrator. Company's high-level master key is $2b$10$BUk6vSyeFaDFtnuNc/39jOskkXM/AlEWQ5XpJjQN869yNWpzZ2NWS");
   } else {
     res.send("Welcome, dear user. Company's low-level key is potato");
@@ -58,13 +47,10 @@ app.get('/api/secret', withAuth, function(req, res) {
 });
 
 app.post('/api/register', function(req, res) {
-  const { adminKey } = req.body;
-  let { email, password } = req.body
+  const { adminKey, email, password } = req.body;
   let isAdmin = false
 
   if (adminKey === adminSecretKey) {
-    email = `${adminSecretKey}_${email}`
-    password = `${adminSecretKey}_${password}`
     isAdmin = true
   }
   const user = new User({ email, password, isAdmin });
@@ -78,18 +64,18 @@ app.post('/api/register', function(req, res) {
   });
 });
 
+const hasRestrictedSymb = (str) => {
+  const restrictedSymbs = ['<', '>', '"', "'", '/', '\ '.trim(), ';', ':', '&', '%', '+', '`'];
+  restrictedSymbs.forEach((symb) => {
+    if (str.indexOf(symb) > -1) {
+      return true
+    }
+  })
+  return sfalse
+}
+
 app.post('/api/authenticate', function(req, res) {
-  const { isAdmin } = req.body;
-  let { email, password } = req.body;
-
-  if (isAdmin) {
-    email = `${adminSecretKey}_${email}`
-    password = `${adminSecretKey}_${password}`
-  }
-
-  console.log('isAdmin', isAdmin)
-  console.log('email', email)
-  console.log('password', password)
+  const { email, password } = req.body;
 
   User.findOne({ email }, function(err, user) {
     if (err) {
@@ -102,6 +88,11 @@ app.post('/api/authenticate', function(req, res) {
       res.status(401)
         .json({
         error: 'Incorrect email, password or you are not admin'
+      });
+    } else if (hasRestrictedSymb(email) || hasRestrictedSymb(password)) {
+      res.status(401)
+        .json({
+        error: 'There are some restricted symbols in email/password'
       });
     } else {
       user.isCorrectPassword(password, function(err, same) {
@@ -116,7 +107,12 @@ app.post('/api/authenticate', function(req, res) {
             error: 'Incorrect email or password'
           });
         } else {
-          res.cookie('login', req.body, { httpOnly: true }).sendStatus(200);
+          const isAdmin = user.isAdmin
+          const payload = { email, isAdmin };
+          const token = jwt.sign(payload, secret, {
+            expiresIn: '1h'
+          });
+          res.cookie('token', token, { httpOnly: true }).sendStatus(200);
         }
       });
     }

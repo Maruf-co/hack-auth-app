@@ -5,9 +5,8 @@ export default class Login extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      email: '',
+      email: null,
       password: '',
-      isAdmin: false,
     };
   }
 
@@ -20,8 +19,6 @@ export default class Login extends Component {
 
   onSubmit = (event) => {
     event.preventDefault();
-
-    console.log('state', this.state)
 
     fetch('/api/authenticate', {
       method: 'POST',
@@ -50,7 +47,7 @@ export default class Login extends Component {
         <h1>Login Below!</h1>
         <Link to="/register">Sign up</Link>
         <input
-          type="text"
+          type="email"
           name="email"
           placeholder="Enter email"
           value={this.state.email}
@@ -67,15 +64,6 @@ export default class Login extends Component {
           required
           className="input"
         />
-        <div className="adminInputWrap">
-          <span>I am admin</span>
-          <input 
-            type="checkbox" 
-            name="adminCheck" 
-            value={this.state.isAdmin}
-            onChange={() => this.state.isAdmin = !this.state.isAdmin} 
-          />
-        </div>
         <input type="submit" value="Submit" className="input" />
       </form>
     );

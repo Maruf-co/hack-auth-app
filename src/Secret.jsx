@@ -16,9 +16,9 @@ export default class Secret extends Component {
 
   render() {
     return (
-      <div>
+      <div className='wrap'>
         <h1>Secret</h1>
-        <p>{this.state.message}</p>
+        <p className='secretText'>{this.state.message}</p>
       </div>
     );
   }
